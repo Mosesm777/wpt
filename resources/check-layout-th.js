@@ -18,9 +18,14 @@ function checkAttribute(output, node, attribute)
     return result;
 }
 
-function assert_tolerance(actual, expected, message)
+function assert_tolerance(actual, expected, message, fuzzyFactor)
 {
-    if (isNaN(expected) || Math.abs(actual - expected) >= 1) {
+    // The actual and expected values may differ by a fractional amount even if
+    // fuzzyFactor is 0. This explains the curious if-condition.
+    if (isNaN(expected) || Math.abs(actual - expected) >= (fuzzyFactor + 1)) {
+      if (fuzzyFactor)
+        assert_approx_equals(actual, Number(expected), Number(fuzzyFactor), message);
+      else
         assert_equals(actual, Number(expected), message);
     }
 }
@@ -47,7 +52,8 @@ function checkDataKeys(node) {
         "data-expected-margin-top",
         "data-expected-margin-bottom",
         "data-expected-margin-left",
-        "data-expected-margin-right"
+        "data-expected-margin-right",
+        "data-fuzzy-factor"
     ]);
     if (!node || !node.getAttributeNames)
         return;
@@ -63,68 +69,72 @@ function checkExpectedValues(t, node, prefix)
     checkDataKeys(node);
     var output = { checked: false };
 
+    var fuzzyFactor = checkAttribute(output, node, "data-fuzzy-factor");
+    // Fuzzy factor parsing shouldn't contribute to output being checked.
+    output.checked = false;
+
     var expectedWidth = checkAttribute(output, node, "data-expected-width");
     if (expectedWidth) {
-        assert_tolerance(node.offsetWidth, expectedWidth, prefix + "width");
+        assert_tolerance(node.offsetWidth, expectedWidth, prefix + "width", fuzzyFactor);
     }
 
     var expectedHeight = checkAttribute(output, node, "data-expected-height");
     if (expectedHeight) {
-        assert_tolerance(node.offsetHeight, expectedHeight, prefix + "height");
+        assert_tolerance(node.offsetHeight, expectedHeight, prefix + "height", fuzzyFactor);
     }
 
     var expectedOffset = checkAttribute(output, node, "data-offset-x");
     if (expectedOffset) {
-        assert_tolerance(node.offsetLeft, expectedOffset, prefix + "offsetLeft");
+        assert_tolerance(node.offsetLeft, expectedOffset, prefix + "offsetLeft", fuzzyFactor);
     }
 
     var expectedOffset = checkAttribute(output, node, "data-offset-y");
     if (expectedOffset) {
-        assert_tolerance(node.offsetTop, expectedOffset, prefix + "offsetTop");
+        assert_tolerance(node.offsetTop, expectedOffset, prefix + "offsetTop", fuzzyFactor);
     }
 
     var expectedWidth = checkAttribute(output, node, "data-expected-client-width");
     if (expectedWidth) {
-        assert_tolerance(node.clientWidth, expectedWidth, prefix + "clientWidth");
+        assert_tolerance(node.clientWidth, expectedWidth, prefix + "clientWidth", fuzzyFactor);
     }
 
     var expectedHeight = checkAttribute(output, node, "data-expected-client-height");
     if (expectedHeight) {
-        assert_tolerance(node.clientHeight, expectedHeight, prefix + "clientHeight");
+        assert_tolerance(node.clientHeight, expectedHeight, prefix + "clientHeight", fuzzyFactor);
     }
 
     var expectedWidth = checkAttribute(output, node, "data-expected-scroll-width");
     if (expectedWidth) {
-        assert_tolerance(node.scrollWidth, expectedWidth, prefix + "scrollWidth");
+        assert_tolerance(node.scrollWidth, expectedWidth, prefix + "scrollWidth", fuzzyFactor);
     }
 
     var expectedHeight = checkAttribute(output, node, "data-expected-scroll-height");
     if (expectedHeight) {
-        assert_tolerance(node.scrollHeight, expectedHeight, prefix + "scrollHeight");
+        assert_tolerance(node.scrollHeight, expectedHeight, prefix + "scrollHeight", fuzzyFactor);
     }
 
     var expectedWidth = checkAttribute(output, node, "data-expected-bounding-client-rect-width");
     if (expectedWidth) {
-        assert_tolerance(node.getBoundingClientRect().width, expectedWidth, prefix + "getBoundingClientRect().width");
+        assert_tolerance(node.getBoundingClientRect().width, expectedWidth, prefix + "getBoundingClientRect().width", fuzzyFactor);
     }
 
     var expectedHeight = checkAttribute(output, node, "data-expected-bounding-client-rect-height");
     if (expectedHeight) {
-        assert_tolerance(node.getBoundingClientRect().height, expectedHeight, prefix + "getBoundingClientRect().height");
+        assert_tolerance(node.getBoundingClientRect().height, expectedHeight, prefix + "getBoundingClientRect().height", fuzzyFactor);
     }
 
     var expectedOffset = checkAttribute(output, node, "data-total-x");
     if (expectedOffset) {
         var totalLeft = node.clientLeft + node.offsetLeft;
         assert_tolerance(totalLeft, expectedOffset, prefix +
-                         "clientLeft+offsetLeft (" + node.clientLeft + " + " + node.offsetLeft + ")");
+                         "clientLeft+offsetLeft (" + node.clientLeft + " + " + node.offsetLeft + ")", fuzzyFactor);
     }
 
     var expectedOffset = checkAttribute(output, node, "data-total-y");
     if (expectedOffset) {
         var totalTop = node.clientTop + node.offsetTop;
         assert_tolerance(totalTop, expectedOffset, prefix +
-                         "clientTop+offsetTop (" + node.clientTop + " + " + node.offsetTop + ")");
+                         "clientTop+offsetTop (" + node.clientTop + " + " + node.offsetTop + ")", fuzzyFactor);
     }
 
     var expectedDisplay = checkAttribute(output, node, "data-expected-display");
